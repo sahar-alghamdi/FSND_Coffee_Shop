@@ -23,7 +23,7 @@ import { from } from 'rxjs';
     BrowserModule,
     IonicModule.forRoot(),
     HttpClientModule,
-    AppRoutingModule
+    AppRoutingModule,
   ],
   providers: [
     StatusBar,
