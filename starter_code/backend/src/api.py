@@ -27,6 +27,7 @@ CORS(app)
     returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
         or appropriate status code indicating reason for failure
 '''
+
 @app.route('/drinks')
 def get_drinks():
     drinks = Drink.query.order_by(Drink.id).all()
@@ -112,6 +113,38 @@ def create_drink(self):
         or appropriate status code indicating reason for failure
 '''
 
+@app.route('/drinks/<id>', methods=['PATCH'])
+@requires_auth('patch:drinks')
+def edit_drink(self, id):
+    drink = Drink.query.get(id)
+    try:
+        if drink is None:
+            abort(404)
+
+        body = request.get_json()
+
+        if (body is None):
+            abort(422)
+
+        new_title = body.get('title')
+        new_recipe = body.get('recipe')
+
+        if new_title is not None:
+            drink.title = new_title
+        
+        if new_recipe is not None:
+            drink.recipe = json.dumps(new_recipe)
+
+        drink.update()
+
+        return jsonify({
+          'success': True,
+          'drinks': [drink.long()]
+        })
+
+    except:
+        abort(422)
+
 
 '''
 @TODO implement endpoint
@@ -124,6 +157,23 @@ def create_drink(self):
         or appropriate status code indicating reason for failure
 '''
 
+@app.route('/drinks/<id>', methods=['DELETE'])
+@requires_auth('delete:drinks')
+def delete_drink(self, id):
+    drink = Drink.query.get(id)
+    try:
+        if drink is None:
+            abort(404)
+
+        drink.delete()
+
+        return jsonify({
+          'success': True,
+          'delete': id
+        })
+
+    except:
+        abort(422)
 
 ## Error Handling
 '''
@@ -148,13 +198,28 @@ def unprocessable(error):
 
 '''
 
+
 '''
 @TODO implement error handler for 404
     error handler should conform to general task above 
 '''
 
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({
+      "success": False, 
+      "error": 404,
+      "message": "resource not found"
+    }), 404
 
 '''
 @TODO implement error handler for AuthError
     error handler should conform to general task above 
 '''
+
+@app.errorhandler(AuthError)
+def handle_auth_error(err):
+    response = jsonify(err.error)
+    response.status_code = err.status_code
+    return response
+
